@@ -1,6 +1,6 @@
 "use strict";
 
-import { fetchProducts } from "./function";
+import { fetchCategories, fetchProducts } from "./function";
 
 
 /**
@@ -10,7 +10,7 @@ import { fetchProducts } from "./function";
  * si lo encuentra, le agrega la clase "md:block" para hacerlo visible
  * en dispositivos medianos en adelante.
  * 
- * @function
+ * @function showToast
  * @returns {void}
  */
 
@@ -26,8 +26,8 @@ const showToast = () => {
  * 
  * Esta función busca un elemento con el ID "demo" y, si lo encuentra,
  * añade un evento `click` que abre un video en una nueva pestaña del navegador.
- * 
- * @function
+ *  
+ * @function showVideo
  * @returns {void}
  */
 
@@ -40,6 +40,13 @@ const showVideo = () => {
     }
 };
 
+/**
+ * Descarga y renderiza una lista de productos en el contenedor #products-container.
+ * Actualmente se muestran hasta 6 productos.
+ * 
+ * @function renderProducts
+ * @returns {void} No devuelve valor. Si ocurre un error muestra una alerta.
+ */
 const renderProducts = () => {
     fetchProducts('https://data-dawm.github.io/datum/reseller/products.json')
         .then(result => {
@@ -71,7 +78,7 @@ const renderProducts = () => {
 
                     productHTML = productHTML.replaceAll('[PRODUCT.IMGURL]', product.imgUrl);
                     productHTML = productHTML.replaceAll('[PRODUCT.TITLE]', product.title.length > 20 ? product.title.substring(0, 20) + '...' : product.title);
-                    productHTML = productHTML.replaceAll('[PRODUCT.PRICE]', product.price);                    
+                    productHTML = productHTML.replaceAll('[PRODUCT.PRICE]', product.price);
                     productHTML = productHTML.replaceAll('[PRODUCT.CATEGORY_ID]', product.category_id);
 
                     container.innerHTML += productHTML;
@@ -84,8 +91,50 @@ const renderProducts = () => {
         })
 };
 
+
+/**
+ * Descarga el XML de categorías y popula el <select id="categories"> con las opciones.
+ * En caso de error muestra una alerta con el mensaje correspondiente.
+ * 
+ * @async
+ * @function renderCategories
+ * @returns {Promise<void>} Promesa resuelta cuando se ha actualizado el DOM o se lanzó una alerta en error.
+ */
+const renderCategories = async () => {
+    try {
+        const result = await fetchCategories('https://data-dawm.github.io/datum/reseller/categories.xml');
+
+        if (result.success) {
+            const container = document.getElementById("categories");
+            if (!container) return;
+
+            container.innerHTML = `<option selected disabled>Seleccione una categoría</option>`;
+
+            const categoriesXML = result.body;
+            const categories = categoriesXML.getElementsByTagName('category');
+
+            for (let category of categories) {
+                const idEl = category.getElementsByTagName('id')[0];
+                const nameEl = category.getElementsByTagName('name')[0];
+                const id = idEl ? idEl.textContent.trim() : '';
+                const name = nameEl ? nameEl.textContent.trim() : '';
+
+                let categoryHTML = `<option value="[ID]">[NAME]</option>`;
+                categoryHTML = categoryHTML.replace('[ID]', id).replace('[NAME]', name);
+
+                container.innerHTML += categoryHTML;
+            }
+        } else {
+            alert(result.message || 'Error al cargar las categorías.');
+        }
+    } catch (error) {
+        alert(error.message || 'Error al cargar las categorías.');
+    }
+};
+
 (() => {
     showToast();
     showVideo();
     renderProducts();
+    renderCategories();
 })();

@@ -1,5 +1,15 @@
 "use strict";
 
+/**
+ * Descarga un JSON de productos desde la URL indicada y normaliza la respuesta.
+ *
+ * Realiza un fetch a la URL proporcionada y devuelve un objeto con la forma:
+ * { success: true, body: <datos JSON> } o { success: false, body: <mensaje de error> }.
+ *
+ * @function fetchProducts
+ * @param {string} url - URL del endpoint JSON de productos.
+ * @returns {Promise<{success: boolean, body: any|string}>} Promesa que resuelve con el resultado normalizado.
+ */
 let fetchProducts = (url) => {
 
     return fetch(url)
@@ -33,6 +43,19 @@ let fetchProducts = (url) => {
         });
 }
 
+
+/**
+ * Descarga un XML de categorías desde la URL indicada y lo parsea a Document XML.
+ *
+ * Realiza un fetch a la URL proporcionada, parsea el texto a XML usando DOMParser
+ * y devuelve un objeto con la forma:
+ * { success: true, body: <Document XML> } o { success: false, body: <mensaje de error> }.
+ *
+ * @async
+ * @function fetchCategories
+ * @param {string} url - URL del recurso XML de categorías.
+ * @returns {Promise<{success: boolean, body: Document|string}>} Promesa que resuelve con el Document XML o mensaje de error.
+ */
 let fetchCategories = async (url) => {
     try {
         const response = await fetch(url);

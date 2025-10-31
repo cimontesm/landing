@@ -1,7 +1,8 @@
 "use strict";
 
 import { fetchCategories, fetchProducts } from "./function";
-
+import { saveVote } from "./firebase";
+import { getVotes } from "./firebase";
 
 /**
  * Muestra un elemento toast en pantalla si existe en el DOM.
@@ -132,9 +133,76 @@ const renderCategories = async () => {
     }
 };
 
+const enableForm = () => {
+    const form = document.getElementById("form_voting");
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const selectedProduct = document.getElementById("select_product").value;
+        const result = await saveVote(selectedProduct);
+        if (result.status === 'success') {
+            console.log('Voto guardado correctamente.');
+        } else {
+            console.error('Error al guardar el voto: ' + result.message);
+        }
+    });
+}
+
+const displayVotes = async () => {
+    const container = document.getElementById("results");
+    if (!container) return;
+
+    const result = await getVotes();
+
+    if (result.status !== 'success') {
+        container.innerHTML = `<p class="text-red-600">Error: ${result.message || 'No se pudieron obtener los votos.'}</p>`;
+        return;
+    }
+
+    if (!result.data || Object.keys(result.data).length === 0) {
+        container.innerHTML = `<p>No hay votos registrados.</p>`;
+        return;
+    }
+
+    // Contar votos por productID
+    const counts = {};
+    for (const voteID in result.data) {
+        const vote = result.data[voteID];
+        const productID = vote?.productID ?? 'Sin producto';
+        counts[productID] = (counts[productID] || 0) + 1;
+    }
+
+    // Construir tabla HTML
+    let tableHTML = `
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Votos</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+    `;
+
+    for (const [productID, total] of Object.entries(counts)) {
+        tableHTML += `
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${productID}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${total}</td>
+            </tr>
+        `;
+    }
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+    container.innerHTML = tableHTML;
+};
+
 (() => {
     showToast();
     showVideo();
     renderProducts();
     renderCategories();
+    enableForm();
+    displayVotes();
 })();
